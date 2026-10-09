@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
 
-const authController = require('../controllers/auth.controller')
+const userController = require('../controllers/user.controller');
 
-router.post('/auth', async (req, res) => {
-    await authController.auth(req, res)
-})
+router.post('/auth', function (req, res){
+    userController.auth(req, res)
+});
+router.post('/register', function (req,res){
+    userController.register(req, res)
+});
 
 module.exports = router

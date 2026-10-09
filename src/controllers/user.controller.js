@@ -1,10 +1,10 @@
-const authService = require('../services/auth.service')
+const userService = require('../services/user.service')
 
 async function auth(req, res) {
     const {tipoLogin} = req.body;
 
     if(tipoLogin === 'auth') {
-        await authService.auth(req, res)
+        return await userService.auth(req, res)
     } else if (tipoLogin === 'google') {
 
     } else if (tipoLogin === 'microsoft') {
@@ -15,6 +15,11 @@ async function auth(req, res) {
 
 }
 
+async function register(req, res) {
+    return userService.register(req, res);
+}
+
 module.exports = {
-    auth
+    auth,
+    register
 }
