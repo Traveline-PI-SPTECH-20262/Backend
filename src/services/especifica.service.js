@@ -13,8 +13,6 @@ async function getEspecifica() {
             { titulo: 'Destino em ascensão',       valor: 'Bonito, MS',           detalhe: '↑ +38% de viagens vs. período anterior', icone: '📈' },
             { titulo: 'Modal mais rentável',       valor: 'Aéreo',                detalhe: 'R$ 1.920 de receita por viagem',         icone: '✈️' },
             { titulo: 'Próxima alta temporada',    valor: 'Dezembro',             detalhe: 'Salvador e Florianópolis',               icone: '📅' },
-            { titulo: 'Viagens recorrentes',       valor: '41%',                  detalhe: 'das viagens não são pontuais',           icone: '🔁' },
-            { titulo: 'Destinos novos no período', valor: '5',                    detalhe: 'sem venda no período anterior',          icone: '🆕' }
         ],
         
         trimestres: {
