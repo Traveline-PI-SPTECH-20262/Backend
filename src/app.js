@@ -6,6 +6,7 @@ app.use(express.json());
 app.use(cors('*'));
 const userRoutes = require('./routes/user.routes');
 const perfilRoutes = require('./routes/perfil.routes');
+const especificaRoutes = require('./routes/especifica.routes');
 
 app.get('/', async (req, res) => {
     const db = require('./database/db');
@@ -15,5 +16,6 @@ app.get('/', async (req, res) => {
 
 app.use('/user', userRoutes);
 app.use('/perfil', perfilRoutes); 
+app.use('/especifica', especificaRoutes);
 
 module.exports = app;
