@@ -21,15 +21,28 @@ async function googleAuth(token) {
 
 
 //register
-function register(req, res) {
+async function register(req, res) {
     const { nome, codigoAtivacao, email, senha, cargo } = req.body;
 
+    if(!nome || !codigoAtivacao || !email || !senha || !cargo){
+        return res.status(401).json({ message: "Preencha todos os campos" });
+    }
+
+    const [agencias] = await db.execute(
+    `SELECT idAgencia FROM agencia WHERE codigoAtivacao = ?`,[codigoAtivacao]);
+    if (agencias.length === 0) {
+            return res.status(400).json({
+                message: "Código de ativação inválido!"
+            });
+        }
+
+    const idAgencia = agencias[0].idAgencia;
     return db.execute('SELECT * FROM usuario WHERE email = ?', [email])
         .then(([resposta]) => {
             if (resposta.length > 0) {
                 return res.status(400).json({ message: "E-mail já cadastrado!" });
-            }             
-            return db.execute('INSERT INTO usuario (nome, codigoAtivacao, email, senha, cargo) VALUES (?, ?, ?, ?, ?)', [nome, codigoAtivacao, email, senha, cargo])
+            }          
+            return db.execute('INSERT INTO usuario (nome, idAgencia, email, senha, cargo) VALUES (?, ?, ?, ?, ?)',[nome, idAgencia, email, senha, cargo])
                 .then(() => {
                     return res.status(201).json({ message: "Usuário cadastrado com sucesso!" });
                 });
