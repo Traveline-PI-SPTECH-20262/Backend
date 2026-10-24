@@ -3,7 +3,7 @@ const router = express.Router();
 
 const perfilController = require('../controllers/perfil.controller');
 
-router.get('/:id', function (req, res) {
+router.get('/:id/:idagencia', function (req, res) {
     perfilController.getPerfil(req, res);
 });
 
