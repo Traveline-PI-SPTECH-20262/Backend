@@ -14,10 +14,6 @@ async function auth(req, res) {
     }
 }
 
-async function googleAuth(token) {
-
-}
-
 
 
 //register
