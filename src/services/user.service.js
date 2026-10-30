@@ -3,9 +3,14 @@ const db = require('../database/db');
 //auth
 async function auth(req, res) {
     const {email, password} = req.body;
+
+    if( !email || !password){
+        return res.status(401).json({ message: "Preencha todos os campos" });
+    }
+
     try {
         const [resposta] = await db.execute('select * from usuario where email = ? and senha = ?', [email, password])
-        if(resposta.length < 1) return res.status(404).json({ message: "Usuário não encontrado" });
+        if(resposta.length < 1) return res.status(404).json({ message: "Usuário não encontrado ou senha incorreta" });
         console.log(resposta)
         return res.status(200).json({ usuario: resposta[0] })
     } catch (error) {
