@@ -10,7 +10,17 @@ async function getPerfil(id,idAgencia) {
     };
 }
 
+async function editarPerfil(idusuario, nome, email) {
+    const [resultado] = await db.execute(
+        'UPDATE usuario SET nome = ?, email = ? WHERE idusuario = ?',
+        [nome, email, idusuario]
+    );
+
+    return resultado;
+}
+
 module.exports = {
-    getPerfil
+    getPerfil,
+    editarPerfil
 };
 

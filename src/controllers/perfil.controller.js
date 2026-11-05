@@ -8,6 +8,26 @@ async function getPerfil(req, res) {
     return res.status(200).json(resultado);
 }
 
+function editarPerfil(req, res) {
+    const idusuario = req.params.idusuario;
+    const nome = req.body.nome;
+    const email = req.body.email;
+
+    perfilService.editarPerfil(idusuario, nome, email)
+        .then(function(resultado) {
+            res.status(200).json({
+                mensagem: 'Perfil atualizado'
+            });
+        })
+        .catch(function(erro) {
+            console.log(erro);
+            res.status(500).json({
+                mensagem: 'Erro'
+            });
+        });
+}
+
 module.exports = {
-    getPerfil
+    getPerfil,
+    editarPerfil
 };
