@@ -8,6 +8,7 @@ const userRoutes = require('./routes/user.routes');
 const perfilRoutes = require('./routes/perfil.routes');
 const especificaRoutes = require('./routes/especifica.routes');
 const painel = require("./routes/painel.routes")
+const dashboardRoutes = require('./routes/dashboard.routes');
 
 app.get('/', async (req, res) => {
     const db = require('./database/db');
@@ -19,5 +20,6 @@ app.use('/user', userRoutes);
 app.use('/perfil', perfilRoutes); 
 app.use('/especifica', especificaRoutes);
 app.use('/painel', painel)
+app.use('/dashboard', dashboardRoutes);
 
 module.exports = app;
