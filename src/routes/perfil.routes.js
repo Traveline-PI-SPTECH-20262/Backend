@@ -11,4 +11,8 @@ router.post('/:idusuario', function(req, res) {
     console.log('POST de edição recebido!');
     perfilController.editarPerfil(req, res);
 });
+
+router.post('/notificacoes/:idusuario', function(req, res) {
+    perfilController.salvarNotificacoes(req, res);
+});
 module.exports = router

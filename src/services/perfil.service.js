@@ -19,8 +19,25 @@ async function editarPerfil(idusuario, nome, email) {
     return resultado;
 }
 
+async function salvarNotificacoes(
+    idusuario,
+    notificacoesAtivas,
+    frequencia
+) {
+
+    const [resultado] = await db.execute(
+        `UPDATE preferencias_notificacao
+         SET notificacoesAtivas = ?, frequencia = ?
+         WHERE idusuario = ?`,
+        [notificacoesAtivas, frequencia, idusuario]
+    );
+
+    return resultado;
+}
+
 module.exports = {
     getPerfil,
-    editarPerfil
+    editarPerfil,
+    salvarNotificacoes
 };
 

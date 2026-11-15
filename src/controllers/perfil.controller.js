@@ -27,7 +27,37 @@ function editarPerfil(req, res) {
         });
 }
 
+async function salvarNotificacoes(req, res) {
+
+    const idusuario = req.params.idusuario;
+
+    const { notificacoesAtivas, frequencia } = req.body;
+
+    try {
+
+        await perfilService.salvarNotificacoes(
+            idusuario,
+            notificacoesAtivas,
+            frequencia
+        );
+
+        return res.status(200).json({
+            mensagem: 'Preferências de notificação atualizadas!'
+        });
+
+    } catch (erro) {
+
+        console.log(erro);
+
+        return res.status(500).json({
+            mensagem: 'Erro ao salvar as notificações.'
+        });
+
+    }
+}
+
 module.exports = {
     getPerfil,
-    editarPerfil
+    editarPerfil,
+    salvarNotificacoes
 };
