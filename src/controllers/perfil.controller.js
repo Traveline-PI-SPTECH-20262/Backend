@@ -26,6 +26,22 @@ function editarPerfil(req, res) {
             });
         });
 }
+function deletarPerfil(req, res) {
+    const idusuario = req.params.idusuario;
+
+    perfilService.deletarPerfil(idusuario)
+        .then(function(resultado) {
+            res.status(200).json({
+                mensagem: 'Perfil deletado'
+            });
+        })
+        .catch(function(erro) {
+            console.log(erro);
+            res.status(500).json({
+                mensagem: 'Erro'
+            });
+        });
+}
 
 async function salvarNotificacoes(req, res) {
 
@@ -59,5 +75,6 @@ async function salvarNotificacoes(req, res) {
 module.exports = {
     getPerfil,
     editarPerfil,
+    deletarPerfil,
     salvarNotificacoes
 };

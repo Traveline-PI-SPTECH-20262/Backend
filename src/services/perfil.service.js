@@ -19,6 +19,15 @@ async function editarPerfil(idusuario, nome, email) {
     return resultado;
 }
 
+async function deletarPerfil(idusuario) {
+    const [resultado] = await db.execute(
+        'DELETE FROM usuario WHERE idusuario = ?',
+        [idusuario]
+    );
+
+    return resultado;
+}
+
 async function salvarNotificacoes(
     idusuario,
     notificacoesAtivas,
@@ -38,6 +47,7 @@ async function salvarNotificacoes(
 module.exports = {
     getPerfil,
     editarPerfil,
-    salvarNotificacoes
+    salvarNotificacoes,
+    deletarPerfil
 };
 
