@@ -21,5 +21,6 @@ app.use('/perfil', perfilRoutes);
 app.use('/especifica', especificaRoutes);
 app.use('/painel', painel)
 app.use('/dashboard', dashboardRoutes);
+app.use('/upload', require('./routes/upload.routes'));
 
 module.exports = app;
