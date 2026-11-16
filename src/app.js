@@ -7,7 +7,7 @@ app.use(cors('*'));
 const userRoutes = require('./routes/user.routes');
 const perfilRoutes = require('./routes/perfil.routes');
 const especificaRoutes = require('./routes/especifica.routes');
-const painel = require("./routes/painel.routes")
+const painelRoutes = require("./routes/painel.routes")
 const dashboardRoutes = require('./routes/dashboard.routes');
 
 app.get('/', async (req, res) => {
@@ -19,7 +19,7 @@ app.get('/', async (req, res) => {
 app.use('/user', userRoutes);
 app.use('/perfil', perfilRoutes); 
 app.use('/especifica', especificaRoutes);
-app.use('/painel', painel)
+app.use('/painel', painelRoutes)
 app.use('/dashboard', dashboardRoutes);
 
 module.exports = app;
