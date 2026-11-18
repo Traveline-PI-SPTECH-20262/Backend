@@ -17,6 +17,55 @@ async function getKpis(req, res) {
     }
 }
 
+
+
+async function getAnalise(req, res) {
+    try {
+        const idAgencia = Number(req.params.idagencia);
+        const tipo = req.params.tipo;
+
+        const tiposPermitidos = [
+            'paises',
+            'continentes',
+            'ufs',
+            'sazonalidade'
+        ];
+
+        if (!Number.isInteger(idAgencia) || idAgencia < 1) {
+            return res.status(400).json({
+                mensagem: 'idagencia inválido'
+            });
+        }
+
+        if (!tiposPermitidos.includes(tipo)) {
+            return res.status(400).json({
+                mensagem: 'Tipo de análise inválido'
+            });
+        }
+
+        const resultado = await dashboardService.getAnalise(
+            idAgencia,
+            tipo,
+            req.query
+        );
+
+        return res.status(200).json(resultado);
+
+    } catch (erro) {
+        console.error('Erro ao buscar análise:', erro);
+
+        return res.status(500).json({
+            mensagem: 'Erro ao buscar dados da análise'
+        });
+    }
+}
+
+
+
+
+
+
 module.exports = {
-    getKpis
+    getKpis,
+    getAnalise
 };

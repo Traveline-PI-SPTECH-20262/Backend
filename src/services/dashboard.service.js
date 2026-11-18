@@ -131,6 +131,117 @@ async function getKpis(idAgencia, query) {
     return { filtros: { ano: ano, mes: mes || null }, kpis: kpis };
 }
 
+
+
+async function getAnalise(idAgencia, tipo, query) {
+    let tabela;
+    let campo;
+    let agrupamento;
+    let filtros = `WHERE p.agencia_idAgencia = ? AND p.situacao = 'CONCLUIDA' AND p.idplanilha = (SELECT MAX(idplanilha) FROM planilha
+                    WHERE agencia_idAgencia = ? AND situacao = 'CONCLUIDA')`;
+
+    const params = [idAgencia, idAgencia];
+
+    if (query.ano && query.ano !== 'todos') {
+        filtros += ' AND t.ano = ?';
+        params.push(query.ano);
+    }
+
+    if (tipo === 'paises' || tipo === 'continentes') {
+        tabela = `turista_por_pais_mes t
+                    JOIN pais pa ON pa.idpais = t.pais_idpais
+                        JOIN planilha p ON p.idplanilha = t.planilha_idplanilha`;
+
+        if (tipo === 'paises') {
+            campo = 'pa.nome';
+            agrupamento = 'pa.idpais, pa.nome';
+
+            if (query.continente && query.continente !== 'todos') {
+                filtros += ' AND pa.continente = ?';
+                params.push(query.continente);
+            }
+
+            if (query.busca) {
+                filtros += ' AND pa.nome LIKE ?';
+                params.push(`%${query.busca}%`);
+            }
+        } else {
+            campo = 'pa.continente';
+            agrupamento = 'pa.continente';
+
+            if (query.continente && query.continente !== 'todos') {
+                filtros += ' AND pa.continente = ?';
+                params.push(query.continente);
+            }
+        }
+
+        var colunaQuantidade = 't.quantidade_turistas';
+
+    } else {
+        tabela = `turista_por_estado_mes t
+                    JOIN estado e ON e.idestado = t.estado_idestado
+                        JOIN planilha p ON p.idplanilha = t.planilha_idplanilha`;
+
+        if (query.uf && query.uf !== 'todas') {
+            filtros += ' AND e.sigla = ?';
+            params.push(query.uf);
+        }
+
+        if (tipo === 'ufs') {
+            campo = 'e.sigla';
+            agrupamento = 'e.idestado, e.sigla';
+        } else {
+            campo = `
+                CASE LOWER(t.mes)
+                    WHEN 'janeiro' THEN '1'
+                    WHEN 'fevereiro' THEN '2'
+                    WHEN 'março' THEN '3'
+                    WHEN 'marco' THEN '3'
+                    WHEN 'abril' THEN '4'
+                    WHEN 'maio' THEN '5'
+                    WHEN 'junho' THEN '6'
+                    WHEN 'julho' THEN '7'
+                    WHEN 'agosto' THEN '8'
+                    WHEN 'setembro' THEN '9'
+                    WHEN 'outubro' THEN '10'
+                    WHEN 'novembro' THEN '11'
+                    WHEN 'dezembro' THEN '12'
+                    ELSE t.mes
+                END`;
+
+            agrupamento = campo;
+        }
+
+        var colunaQuantidade = 't.quantidade_turista';
+    }
+
+    const sql = `SELECT ${campo} AS nome, SUM(${colunaQuantidade}) AS valor FROM ${tabela} ${filtros}
+                GROUP BY ${agrupamento} ORDER BY valor DESC`;
+
+    const [registros] = await db.execute(sql, params);
+
+    const total = registros.reduce(
+        (soma, registro) => soma + Number(registro.valor),
+        0
+    );
+
+    const linhas = registros.map(registro => ({
+        nome: String(registro.nome),
+        valor: Number(registro.valor),
+        participacao: total > 0
+            ? Number((Number(registro.valor) / total * 100).toFixed(2))
+            : 0
+    }));
+
+    if (tipo === 'sazonalidade') {
+        linhas.sort((a, b) => Number(a.nome) - Number(b.nome));
+    }
+
+    return { total, linhas };
+}
+
+
 module.exports = {
-    getKpis
+    getKpis,
+    getAnalise
 };
