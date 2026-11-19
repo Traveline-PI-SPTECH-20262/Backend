@@ -25,34 +25,45 @@ async function editarPerfil(idusuario, nome, email) {
 }
 
 async function deletarPerfil(idusuario) {
-    const [resultado] = await db.execute(
-        'DELETE FROM usuario WHERE idusuario = ?',
+    const conexao = await db.getConnection();
+    try {
+        await conexao.beginTransaction();
+        await conexao.execute('DELETE FROM preferencias_usuario WHERE idUsuario = ?', [idusuario]);
+        await conexao.execute('DELETE FROM relatorio WHERE usuario_idusuario = ?', [idusuario]);
+        const [resultado] = await conexao.execute('DELETE FROM usuario WHERE idusuario = ?', [idusuario]);
+        await conexao.commit();
+        return resultado;
+    } catch (erro) {
+        await conexao.rollback();
+        throw erro;
+    } finally {
+        conexao.release();
+    }
+}
+
+async function getPreferencias(idusuario) {
+    await db.execute(
+        'INSERT IGNORE INTO preferencias_usuario (idUsuario) SELECT idusuario FROM usuario WHERE idusuario = ?',
         [idusuario]
     );
-
-    return resultado;
+    const [resultado] = await db.execute('SELECT * FROM preferencias_usuario WHERE idUsuario = ?', [idusuario]);
+    return resultado[0];
 }
 
-async function salvarNotificacoes(
-    idusuario,
-    notificacoesAtivas,
-    frequencia
-) {
-
+async function salvarPreferencias(idusuario, dados) {
+    const campos = ['temaClaro', 'totalTuristas', 'viaAerea', 'viaTerrestre', 'viaMaritima', 'viaFluvial', 'paisesEmissores', 'notificacoesAtivas'];
+    const valores = [];
+    for (const campo of campos) {
+        valores.push(Number(dados[campo]));
+    }
+    valores.push(dados.frequencia);
     const [resultado] = await db.execute(
-        `UPDATE preferencias_notificacao
-         SET notificacoesAtivas = ?, frequencia = ?
-         WHERE idusuario = ?`,
-        [notificacoesAtivas, frequencia, idusuario]
+        `INSERT INTO preferencias_usuario (idUsuario, temaClaro, totalTuristas, viaAerea, viaTerrestre, viaMaritima, viaFluvial, paisesEmissores, notificacoesAtivas, frequencia)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE temaClaro = ?, totalTuristas = ?, viaAerea = ?, viaTerrestre = ?, viaMaritima = ?, viaFluvial = ?, paisesEmissores = ?, notificacoesAtivas = ?, frequencia = ?`,
+        [idusuario].concat(valores, valores)
     );
-
     return resultado;
 }
 
-module.exports = {
-    getPerfil,
-    editarPerfil,
-    salvarNotificacoes,
-    deletarPerfil
-};
-
+module.exports = { getPerfil, editarPerfil, deletarPerfil, getPreferencias, salvarPreferencias };

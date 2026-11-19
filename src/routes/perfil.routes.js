@@ -3,6 +3,10 @@ const router = express.Router();
 
 const perfilController = require('../controllers/perfil.controller');
 
+router.get('/preferencias/:idusuario', function (req, res) {
+    perfilController.getPreferencias(req, res);
+});
+
 router.get('/:id/:idagencia', function (req, res) {
     perfilController.getPerfil(req, res);
 });
@@ -17,7 +21,7 @@ router.delete('/:idusuario', function(req, res) {
     perfilController.deletarPerfil(req, res);
 });
 
-router.post('/notificacoes/:idusuario', function(req, res) {
-    perfilController.salvarNotificacoes(req, res);
+router.post('/preferencias/:idusuario', function(req, res) {
+    perfilController.salvarPreferencias(req, res);
 });
 module.exports = router

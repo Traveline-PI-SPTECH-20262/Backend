@@ -43,38 +43,45 @@ function deletarPerfil(req, res) {
         });
 }
 
-async function salvarNotificacoes(req, res) {
-
-    const idusuario = req.params.idusuario;
-
-    const { notificacoesAtivas, frequencia } = req.body;
-
+async function getPreferencias(req, res) {
+    const idusuario = Number(req.params.idusuario);
+    if (!Number.isSafeInteger(idusuario) || idusuario <= 0) {
+        return res.status(400).json({ mensagem: 'Usuário inválido.' });
+    }
     try {
-
-        await perfilService.salvarNotificacoes(
-            idusuario,
-            notificacoesAtivas,
-            frequencia
-        );
-
-        return res.status(200).json({
-            mensagem: 'Preferências de notificação atualizadas!'
-        });
-
+        const resultado = await perfilService.getPreferencias(idusuario);
+        if (!resultado) return res.status(404).json({ mensagem: 'Usuário não encontrado.' });
+        return res.status(200).json(resultado);
     } catch (erro) {
-
-        console.log(erro);
-
-        return res.status(500).json({
-            mensagem: 'Erro ao salvar as notificações.'
-        });
-
+        console.error('Erro ao carregar preferências:', erro);
+        return res.status(500).json({ mensagem: 'Erro ao carregar as preferências.' });
     }
 }
 
-module.exports = {
-    getPerfil,
-    editarPerfil,
-    deletarPerfil,
-    salvarNotificacoes
-};
+async function salvarPreferencias(req, res) {
+    const campos = ['temaClaro', 'totalTuristas', 'viaAerea', 'viaTerrestre', 'viaMaritima', 'viaFluvial', 'paisesEmissores', 'notificacoesAtivas'];
+    const idusuario = Number(req.params.idusuario);
+    if (!Number.isSafeInteger(idusuario) || idusuario <= 0) {
+        return res.status(400).json({ mensagem: 'Usuário inválido.' });
+    }
+
+    for (const campo of campos) {
+        if (typeof req.body[campo] !== 'boolean') {
+            return res.status(400).json({ mensagem: 'Informe as preferências válidas.' });
+        }
+    }
+
+    const frequencias = ['modoTeste', 'diaria', 'semanal', 'mensal'];
+    if (!frequencias.includes(req.body.frequencia)) {
+        return res.status(400).json({ mensagem: 'Frequência inválida.' });
+    }
+    try {
+        await perfilService.salvarPreferencias(req.params.idusuario, req.body);
+        return res.status(200).json({ mensagem: 'Preferências atualizadas!' });
+    } catch (erro) {
+        console.error('Erro ao salvar preferências:', erro);
+        return res.status(500).json({ mensagem: 'Erro ao salvar as preferências.' });
+    }
+}
+
+module.exports = { getPerfil, editarPerfil, deletarPerfil, getPreferencias, salvarPreferencias };

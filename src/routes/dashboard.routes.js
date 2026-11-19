@@ -7,4 +7,8 @@ router.get('/kpis/:idagencia', function (req, res) {
     dashboardController.getKpis(req, res);
 });
 
+router.get('/geral/:idagencia', function (req, res) {
+    dashboardController.getGeral(req, res);
+});
+
 module.exports = router;

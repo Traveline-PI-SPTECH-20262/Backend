@@ -1,72 +1,65 @@
 const db = require('../database/db');
 
-//auth
 async function auth(req, res) {
-    const {email, password} = req.body;
-
-    if( !email || !password){
-        return res.status(401).json({ message: "Preencha todos os campos" });
+    const { email, password } = req.body;
+    if (!email || !password) {
+        return res.status(401).json({ message: 'Preencha todos os campos' });
     }
 
     try {
-        const [resposta] = await db.execute('select * from usuario where email = ? and senha = ?', [email, password])
-        if(resposta.length < 1) return res.status(404).json({ message: "Usuário não encontrado ou senha incorreta" });
-        const [resposta2] = await db.execute('select * from preferencias_notificacao where idusuario = ?', [resposta[0].idusuario])
-        console.log(resposta)
-        return res.status(200).json({ usuario: resposta[0], preferencias: resposta2[0], message: 'testee2'} );
-    } catch (error) {
-        console.log(error)
-        return res.status(500).json({erro: error})
+        const [usuarios] = await db.execute(
+            'SELECT * FROM usuario WHERE email = ? AND senha = ?', [email, password]
+        );
+        if (usuarios.length === 0) {
+            return res.status(404).json({ message: 'Usuário não encontrado ou senha incorreta' });
+        }
+        await db.execute('INSERT IGNORE INTO preferencias_usuario (idUsuario) VALUES (?)', [usuarios[0].idusuario]);
+        const [preferencias] = await db.execute(
+            'SELECT * FROM preferencias_usuario WHERE idUsuario = ?', [usuarios[0].idusuario]
+        );
+        return res.status(200).json({ usuario: usuarios[0], preferencias: preferencias[0] });
+    } catch (erro) {
+        console.error('Erro no login:', erro);
+        return res.status(500).json({ message: 'Erro ao realizar login' });
     }
 }
 
-
-
-//register
 async function register(req, res) {
     const { nome, codigoAtivacao, email, senha, cargo } = req.body;
-
-    if(!nome || !codigoAtivacao || !email || !senha || !cargo){
-        return res.status(401).json({ message: "Preencha todos os campos" });
+    if (!nome || !codigoAtivacao || !email || !senha || !cargo) {
+        return res.status(401).json({ message: 'Preencha todos os campos' });
     }
 
+    let conexao;
     try {
-        const [agencias] = await db.execute(`SELECT idAgencia FROM agencia WHERE codigoAtivacao = ?`,[codigoAtivacao]);
-
-        if (agencias.length === 0) {
-                return res.status(400).json({
-                    message: "Código de ativação inválido!"
-                });
-        }
-        
-        const idAgencia = agencias[0].idAgencia;
-        const [usuariosExistentes] = await db.execute('SELECT * FROM usuario WHERE email = ?', [email]);
-
-        if (usuariosExistentes.length > 0) {
-            return res.status(400).json({ message: "E-mail já cadastrado!" });
-        }
-
-        const [respostaUser] = await db.execute(
-                    'INSERT INTO usuario (nome, idAgencia, email, senha, cargo) VALUES (?, ?, ?, ?, ?)',
-                    [nome, idAgencia, email, senha, cargo]
+        conexao = await db.getConnection();
+        await conexao.beginTransaction();
+        const [codigos] = await conexao.execute(
+            'SELECT idAgencia FROM codigo_ativacao WHERE codigo = ? AND status = 1', [codigoAtivacao]
         );
-
-        
-        await db.execute(
-            'INSERT INTO preferencias_notificacao (idusuario, notificacoesAtivas, frequencia) VALUES (?, true, ?)',
-            [respostaUser.insertId, 'modoTeste']
+        if (codigos.length === 0) {
+            await conexao.rollback();
+            return res.status(400).json({ message: 'Código de ativação inválido ou desativado!' });
+        }
+        const [usuarios] = await conexao.execute('SELECT idusuario FROM usuario WHERE email = ?', [email]);
+        if (usuarios.length > 0) {
+            await conexao.rollback();
+            return res.status(400).json({ message: 'E-mail já cadastrado!' });
+        }
+        const [resultado] = await conexao.execute(
+            'INSERT INTO usuario (nome, idAgencia, email, senha, cargo) VALUES (?, ?, ?, ?, ?)',
+            [nome, codigos[0].idAgencia, email, senha, cargo]
         );
-
-        // 5. Retorna sucesso apenas se tudo deu certo
-        return res.status(201).json({ message: "Usuário cadastrado com sucesso!" });
-
-    } catch (error) {
-        console.error("Erro no cadastro:", error);
-        return res.status(500).json({ message: "Erro do servidor" });
+        await conexao.execute('INSERT INTO preferencias_usuario (idUsuario) VALUES (?)', [resultado.insertId]);
+        await conexao.commit();
+        return res.status(201).json({ message: 'Usuário cadastrado com sucesso!' });
+    } catch (erro) {
+        if (conexao) await conexao.rollback();
+        console.error('Erro no cadastro:', erro);
+        return res.status(500).json({ message: 'Erro do servidor' });
+    } finally {
+        if (conexao) conexao.release();
     }
+}
 
-}
-module.exports = {
-    auth,
-    register
-}
+module.exports = { auth, register };

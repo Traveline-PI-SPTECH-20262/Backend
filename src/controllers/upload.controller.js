@@ -21,7 +21,8 @@ async function enviarArquivo(req, res) {
         if (erro.name === 'CredentialsProviderError') {
             return res.status(503).json({ mensagem: 'Configure as credenciais AWS no backend para enviar arquivos.' });
         }
-        if (erro.name === 'AccessDenied' || erro.name === 'InvalidAccessKeyId' || erro.name === 'SignatureDoesNotMatch' || erro.name === 'ExpiredToken') {
+        const errosDeAcesso = ['AccessDenied', 'InvalidAccessKeyId', 'SignatureDoesNotMatch', 'ExpiredToken'];
+        if (errosDeAcesso.includes(erro.name)) {
             return res.status(503).json({ mensagem: 'O acesso da AWS não permite enviar o arquivo. Confira as credenciais e a permissão s3:PutObject.' });
         }
         return res.status(502).json({ mensagem: 'Não foi possível enviar o arquivo ao bucket. Tente novamente.' });

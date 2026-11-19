@@ -19,11 +19,13 @@ const upload = multer({
 router.post('/', function (req, res) {
     upload.single('arquivo')(req, res, function (erro) {
         if (erro) {
-            const mensagem = erro.code === 'LIMIT_FILE_SIZE'
-                ? 'O arquivo deve ter no máximo 20 MB.'
-                : erro instanceof multer.MulterError
-                    ? 'Envie apenas uma planilha no campo arquivo.'
-                    : erro.message;
+            let mensagem = erro.message;
+            if (erro instanceof multer.MulterError) {
+                mensagem = 'Envie apenas uma planilha no campo arquivo.';
+            }
+            if (erro.code === 'LIMIT_FILE_SIZE') {
+                mensagem = 'O arquivo deve ter no máximo 20 MB.';
+            }
             return res.status(400).json({ mensagem });
         }
         return uploadController.enviarArquivo(req, res);
