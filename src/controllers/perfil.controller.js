@@ -61,14 +61,12 @@ async function salvarNotificacoes(req, res) {
             mensagem: 'Preferências de notificação atualizadas!'
         });
 
-    } catch (erro) {
-
+        } catch (erro) {
         console.log(erro);
-
-        return res.status(500).json({
-            mensagem: 'Erro ao salvar as notificações.'
+        const status = erro.status || 500;
+        return res.status(status).json({
+            mensagem: erro.status ? erro.message : 'Erro ao salvar as notificações.'
         });
-
     }
 }
 

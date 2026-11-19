@@ -11,7 +11,7 @@ async function auth(req, res) {
     try {
         const [resposta] = await db.execute('select * from usuario where email = ? and senha = ?', [email, password])
         if(resposta.length < 1) return res.status(404).json({ message: "Usuário não encontrado ou senha incorreta" });
-        const [resposta2] = await db.execute('select * from preferencias_notificacao where idusuario = ?', [resposta[0].idusuario])
+        const [resposta2] = await db.execute('select * from preferencias_usuario where idUsuario = ?', [resposta[0].idusuario])
         console.log(resposta)
         return res.status(200).json({ usuario: resposta[0], preferencias: resposta2[0], message: 'testee2'} );
     } catch (error) {
@@ -31,7 +31,10 @@ async function register(req, res) {
     }
 
     try {
-        const [agencias] = await db.execute(`SELECT idAgencia FROM agencia WHERE codigoAtivacao = ?`,[codigoAtivacao]);
+        const [agencias] = await db.execute(
+    `SELECT idAgencia FROM codigo_ativacao WHERE codigo = ? AND status = 1`,
+    [codigoAtivacao]
+);
 
         if (agencias.length === 0) {
                 return res.status(400).json({
@@ -52,10 +55,10 @@ async function register(req, res) {
         );
 
         
-        await db.execute(
-            'INSERT INTO preferencias_notificacao (idusuario, notificacoesAtivas, frequencia) VALUES (?, true, ?)',
-            [respostaUser.insertId, 'modoTeste']
-        );
+       await db.execute(
+    'INSERT INTO preferencias_usuario (idUsuario, notificacoesAtivas, frequencia) VALUES (?, 1, ?)',
+    [respostaUser.insertId, 'modoTeste']
+);
 
         // 5. Retorna sucesso apenas se tudo deu certo
         return res.status(201).json({ message: "Usuário cadastrado com sucesso!" });

@@ -25,6 +25,10 @@ async function editarPerfil(idusuario, nome, email) {
 }
 
 async function deletarPerfil(idusuario) {
+    // Primeiro apaga o que depende do usuário (chaves estrangeiras)
+    await db.execute('DELETE FROM preferencias_usuario WHERE idUsuario = ?', [idusuario]);
+    await db.execute('DELETE FROM relatorio WHERE usuario_idusuario = ?', [idusuario]);
+
     const [resultado] = await db.execute(
         'DELETE FROM usuario WHERE idusuario = ?',
         [idusuario]
@@ -33,17 +37,27 @@ async function deletarPerfil(idusuario) {
     return resultado;
 }
 
-async function salvarNotificacoes(
-    idusuario,
-    notificacoesAtivas,
-    frequencia
-) {
+const FREQUENCIAS = ['modoTeste', 'diaria', 'semanal', 'mensal'];
+
+async function salvarNotificacoes(idusuario, notificacoesAtivas, frequencia) {
+    if (typeof notificacoesAtivas !== 'boolean') {
+        const e = new Error('notificacoesAtivas deve ser true ou false');
+        e.status = 400;
+        throw e;
+    }
+    if (!FREQUENCIAS.includes(frequencia)) {
+        const e = new Error('Frequência inválida. Use: ' + FREQUENCIAS.join(', '));
+        e.status = 400;
+        throw e;
+    }
 
     const [resultado] = await db.execute(
-        `UPDATE preferencias_notificacao
-         SET notificacoesAtivas = ?, frequencia = ?
-         WHERE idusuario = ?`,
-        [notificacoesAtivas, frequencia, idusuario]
+        `INSERT INTO preferencias_usuario (idUsuario, notificacoesAtivas, frequencia)
+         VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+            notificacoesAtivas = VALUES(notificacoesAtivas),
+            frequencia = VALUES(frequencia)`,
+        [idusuario, notificacoesAtivas ? 1 : 0, frequencia]
     );
 
     return resultado;

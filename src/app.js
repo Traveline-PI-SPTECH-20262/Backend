@@ -9,6 +9,7 @@ const perfilRoutes = require('./routes/perfil.routes');
 const especificaRoutes = require('./routes/especifica.routes');
 const painel = require("./routes/painel.routes")
 const dashboardRoutes = require('./routes/dashboard.routes');
+const notificacaoRoutes = require('./routes/notificacao.routes');
 
 app.get('/', async (req, res) => {
     const db = require('./database/db');
@@ -21,6 +22,7 @@ app.use('/perfil', perfilRoutes);
 app.use('/especifica', especificaRoutes);
 app.use('/painel', painel)
 app.use('/dashboard', dashboardRoutes);
+app.use('/notificacao', notificacaoRoutes);
 app.use('/upload', require('./routes/upload.routes'));
 
 module.exports = app;
