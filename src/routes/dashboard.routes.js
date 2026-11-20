@@ -11,4 +11,8 @@ router.get('/geral/:idagencia', function (req, res) {
     dashboardController.getGeral(req, res);
 });
 
+router.get('/analise/:idagencia', function (req, res) {
+    dashboardController.getAnalise(req, res);
+});
+
 module.exports = router;

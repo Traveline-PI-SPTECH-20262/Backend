@@ -120,13 +120,6 @@ function montarOportunidades(atuais, anteriores) {
         if (anterior) totalAnterior = anterior.valor;
 
         const mudanca = variacao(pais.valor, totalAnterior);
-        let tendencia = 'Sem comparação';
-
-        if (mudanca !== null) {
-            tendencia = 'Manter';
-            if (mudanca > 0) tendencia = 'Subir';
-            if (mudanca < 0) tendencia = 'Cair';
-        }
 
         let participacao = 0;
         if (totalAtual > 0) {
@@ -138,7 +131,7 @@ function montarOportunidades(atuais, anteriores) {
 
         oportunidades.push({
             pais: pais.nome, variacao: mudanca, participacao: participacao,
-            tendencia: tendencia, oportunidade: oportunidade
+            oportunidade: oportunidade
         });
     }
 

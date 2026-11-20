@@ -1,3 +1,4 @@
+const analiseService = require('../services/analise.service');
 const dashboardGeralService = require('../services/dashboard-geral.service');
 const dashboardService = require('../services/dashboard.service');
 
@@ -33,7 +34,22 @@ async function getGeral(req, res) {
     }
 }
 
+async function getAnalise(req, res) {
+    const idAgencia = Number(req.params.idagencia);
+    if (!Number.isSafeInteger(idAgencia) || idAgencia <= 0) {
+        return res.status(400).json({ mensagem: 'Agência inválida.' });
+    }
+    try {
+        const resultado = await analiseService.getAnalise(idAgencia);
+        return res.status(200).json(resultado);
+    } catch (erro) {
+        console.error('Erro ao carregar análise:', erro);
+        return res.status(500).json({ mensagem: 'Não foi possível carregar a análise.' });
+    }
+}
+
 module.exports = {
+    getAnalise,
     getGeral,
     getKpis
 };
