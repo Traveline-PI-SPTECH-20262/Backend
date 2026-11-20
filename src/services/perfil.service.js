@@ -2,7 +2,7 @@ const db = require('../database/db');
 
 
 async function getPerfil(id,idAgencia) {
-    const resultado = await db.execute('SELECT * FROM usuario WHERE idusuario = ?', [id]);
+    const resultado = await db.execute('SELECT u.*, c.cargo FROM usuario u JOIN cargo c ON c.idCargo = u.idCargo WHERE u.idusuario = ?', [id]);
     const resultadoRelatorio = await db.execute('SELECT * FROM relatorio WHERE usuario_idusuario = ?', [id]);
     const resultadoAgencia = await db.execute('SELECT * FROM agencia WHERE idAgencia = ?',[idAgencia] )
     const resultadoPlanilha = await db.execute('SELECT * FROM planilha WHERE agencia_idAgencia = ?',[idAgencia] )
@@ -51,16 +51,15 @@ async function getPreferencias(idusuario) {
 }
 
 async function salvarPreferencias(idusuario, dados) {
-    const campos = ['temaClaro', 'totalTuristas', 'viaAerea', 'viaTerrestre', 'viaMaritima', 'viaFluvial', 'paisesEmissores', 'notificacoesAtivas'];
+    const campos = ['temaClaro', 'totalTuristas', 'viaAerea', 'viaTerrestre', 'viaMaritima', 'viaFluvial', 'paisesEmissores'];
     const valores = [];
     for (const campo of campos) {
         valores.push(Number(dados[campo]));
     }
-    valores.push(dados.frequencia);
     const [resultado] = await db.execute(
-        `INSERT INTO preferencias_usuario (idUsuario, temaClaro, totalTuristas, viaAerea, viaTerrestre, viaMaritima, viaFluvial, paisesEmissores, notificacoesAtivas, frequencia)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-         ON DUPLICATE KEY UPDATE temaClaro = ?, totalTuristas = ?, viaAerea = ?, viaTerrestre = ?, viaMaritima = ?, viaFluvial = ?, paisesEmissores = ?, notificacoesAtivas = ?, frequencia = ?`,
+        `INSERT INTO preferencias_usuario (idUsuario, temaClaro, totalTuristas, viaAerea, viaTerrestre, viaMaritima, viaFluvial, paisesEmissores)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE temaClaro = ?, totalTuristas = ?, viaAerea = ?, viaTerrestre = ?, viaMaritima = ?, viaFluvial = ?, paisesEmissores = ?`,
         [idusuario].concat(valores, valores)
     );
     return resultado;

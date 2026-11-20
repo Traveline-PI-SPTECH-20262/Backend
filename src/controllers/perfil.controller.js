@@ -59,7 +59,7 @@ async function getPreferencias(req, res) {
 }
 
 async function salvarPreferencias(req, res) {
-    const campos = ['temaClaro', 'totalTuristas', 'viaAerea', 'viaTerrestre', 'viaMaritima', 'viaFluvial', 'paisesEmissores', 'notificacoesAtivas'];
+    const campos = ['temaClaro', 'totalTuristas', 'viaAerea', 'viaTerrestre', 'viaMaritima', 'viaFluvial', 'paisesEmissores'];
     const idusuario = Number(req.params.idusuario);
     if (!Number.isSafeInteger(idusuario) || idusuario <= 0) {
         return res.status(400).json({ mensagem: 'Usuário inválido.' });
@@ -71,10 +71,6 @@ async function salvarPreferencias(req, res) {
         }
     }
 
-    const frequencias = ['modoTeste', 'diaria', 'semanal', 'mensal'];
-    if (!frequencias.includes(req.body.frequencia)) {
-        return res.status(400).json({ mensagem: 'Frequência inválida.' });
-    }
     try {
         await perfilService.salvarPreferencias(req.params.idusuario, req.body);
         return res.status(200).json({ mensagem: 'Preferências atualizadas!' });

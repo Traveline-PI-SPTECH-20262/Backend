@@ -8,7 +8,7 @@ async function auth(req, res) {
 
     try {
         const [usuarios] = await db.execute(
-            'SELECT * FROM usuario WHERE email = ? AND senha = ?', [email, password]
+            'SELECT u.*, c.cargo FROM usuario u JOIN cargo c ON c.idCargo = u.idCargo WHERE u.email = ? AND u.senha = ?', [email, password]
         );
         if (usuarios.length === 0) {
             return res.status(404).json({ message: 'Usuário não encontrado ou senha incorreta' });
@@ -25,8 +25,8 @@ async function auth(req, res) {
 }
 
 async function register(req, res) {
-    const { nome, codigoAtivacao, email, senha, cargo } = req.body;
-    if (!nome || !codigoAtivacao || !email || !senha || !cargo) {
+    const { nome, codigoAtivacao, email, senha, idCargo } = req.body;
+    if (!nome || !codigoAtivacao || !email || !senha || !idCargo) {
         return res.status(401).json({ message: 'Preencha todos os campos' });
     }
 
@@ -46,9 +46,14 @@ async function register(req, res) {
             await conexao.rollback();
             return res.status(400).json({ message: 'E-mail já cadastrado!' });
         }
+        const [cargos] = await conexao.execute('SELECT idCargo FROM cargo WHERE idCargo = ?', [idCargo]);
+        if (cargos.length === 0) {
+            await conexao.rollback();
+            return res.status(400).json({ message: 'Selecione um cargo válido.' });
+        }
         const [resultado] = await conexao.execute(
-            'INSERT INTO usuario (nome, idAgencia, email, senha, cargo) VALUES (?, ?, ?, ?, ?)',
-            [nome, codigos[0].idAgencia, email, senha, cargo]
+            'INSERT INTO usuario (nome, idAgencia, email, senha, idCargo) VALUES (?, ?, ?, ?, ?)',
+            [nome, codigos[0].idAgencia, email, senha, idCargo]
         );
         await conexao.execute('INSERT INTO preferencias_usuario (idUsuario) VALUES (?)', [resultado.insertId]);
         await conexao.commit();
@@ -62,4 +67,14 @@ async function register(req, res) {
     }
 }
 
-module.exports = { auth, register };
+async function listarCargos(req, res) {
+    try {
+        const [cargos] = await db.execute('SELECT idCargo, cargo FROM cargo ORDER BY cargo');
+        return res.status(200).json(cargos);
+    } catch (erro) {
+        console.error('Erro ao carregar cargos:', erro);
+        return res.status(500).json({ message: 'Erro ao carregar cargos.' });
+    }
+}
+
+module.exports = { auth, register, listarCargos };
