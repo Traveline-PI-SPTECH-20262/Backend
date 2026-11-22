@@ -22,6 +22,7 @@ app.use('/especifica', especificaRoutes);
 app.use('/painel', painel)
 app.use('/dashboard', dashboardRoutes);
 app.use('/upload', require('./routes/upload.routes'));
+app.use('/admin', require('./routes/admin.routes'));
 
 app.use('/recomendacoes', require('./routes/recomendacoes.routes'));
 
