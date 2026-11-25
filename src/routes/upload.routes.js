@@ -32,4 +32,8 @@ router.post('/', function (req, res) {
     });
 });
 
+router.get('/historico/:idAgencia', async (req, res) => {
+    return uploadController.historicoArquivos(req, res);
+});
+
 module.exports = router;
