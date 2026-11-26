@@ -68,12 +68,14 @@ async function register(req, res) {
 }
 
 async function listarCargos(req, res) {
-    try {
-        const [cargos] = await db.execute('SELECT idCargo, cargo FROM cargo ORDER BY cargo');
-        return res.status(200).json(cargos);
-    } catch (erro) {
-        console.error('Erro ao carregar cargos:', erro);
-        return res.status(500).json({ message: 'Erro ao carregar cargos.' });
+    try {
+        const [cargos] = await db.execute(
+            "SELECT idCargo, cargo FROM cargo WHERE cargo <> 'Administrador' ORDER BY cargo"
+        );
+        return res.status(200).json(cargos);
+    } catch (erro) {
+        console.error('Erro ao carregar cargos:', erro);
+        return res.status(500).json({ message: 'Erro ao carregar cargos.' });
     }
 }
 
