@@ -29,4 +29,19 @@ async function enviarArquivo(req, res) {
     }
 }
 
-module.exports = { enviarArquivo };
+async function historicoArquivos(req, res) {
+    const idAgencia = Number(req.params.idAgencia);
+    if (!Number.isSafeInteger(idAgencia) || idAgencia <= 0) {
+        return res.status(400).json({ mensagem: 'Agência não encontrada. Faça login novamente.' });
+    }
+
+    try {
+        const historico = await uploadService.historicoArquivos(idAgencia);
+        return res.status(200).json({ historico });
+    } catch (erro) {
+        console.error('Erro ao buscar histórico de arquivos:', erro);
+        return res.status(502).json({ mensagem: 'Não foi possível buscar o histórico de arquivos. Tente novamente.' });
+    }
+}
+
+module.exports = { enviarArquivo, historicoArquivos };

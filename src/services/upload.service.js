@@ -1,5 +1,6 @@
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const path = require('node:path');
+const db = require('../database/db');
 
 async function enviarArquivo(arquivo, idAgencia) {
     const bucket = process.env.AWS_S3_BUCKET || 'guilherme-grupo4-27.10';
@@ -30,4 +31,14 @@ async function enviarArquivo(arquivo, idAgencia) {
     }
 }
 
-module.exports = { enviarArquivo };
+async function historicoArquivos(idAgencia) {
+    try {
+        const resultado = await db.execute('SELECT * FROM planilha WHERE agencia_idAgencia = ? ORDER BY criado_em DESC', [idAgencia]);
+        return resultado[0];
+    } catch (error) {
+        console.error('Erro ao buscar histórico de arquivos:', error);
+        throw error;
+    }
+}
+
+module.exports = { enviarArquivo, historicoArquivos };
