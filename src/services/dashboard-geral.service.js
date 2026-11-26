@@ -159,7 +159,7 @@ function montarSazonalidade(meses) {
     return sazonalidade;
 }
 
-async function getGeral(idAgencia) {
+async function getGeral(idAgencia, filtros = {}) {
     // Todos os dados vêm da mesma importação concluída.
     const [planilhas] = await db.execute(
         `SELECT idplanilha, caminho, dataHora FROM planilha
@@ -184,46 +184,93 @@ async function getGeral(idAgencia) {
         [planilha.idplanilha]
     );
 
-    let primeiroAno = null;
-    let ano = null;
+    // Opções dos filtros: sempre calculadas SEM filtro, para os selects não "encolherem".
+    const anosDisponiveis = [];
+    const continentesDisponiveis = [];
 
     for (const pais of paises) {
         const anoPais = Number(pais.ano);
-        if (!Number.isInteger(anoPais) || anoPais <= 0) continue;
-
-        if (primeiroAno === null || anoPais < primeiroAno) primeiroAno = anoPais;
-        if (ano === null || anoPais > ano) ano = anoPais;
+        if (Number.isInteger(anoPais) && anoPais > 0 && !anosDisponiveis.includes(anoPais)) {
+            anosDisponiveis.push(anoPais);
+        }
+        if (pais.continente && !continentesDisponiveis.includes(pais.continente)) {
+            continentesDisponiveis.push(pais.continente);
+        }
     }
 
-    if (ano === null) return { planilha: planilha, semDados: true };
+    if (anosDisponiveis.length === 0) return { planilha: planilha, semDados: true };
 
-    const [ufs] = await db.execute(
-        `SELECT u.sigla AS nome, SUM(t.quantidade_turista) AS valor
-         FROM turista_por_estado_mes t
-         JOIN uf u ON u.iduf = t.uf_iduf
-         WHERE t.planilha_idplanilha = ?
-         GROUP BY u.iduf, u.sigla ORDER BY valor DESC, u.sigla`,
-        [planilha.idplanilha]
-    );
+    anosDisponiveis.sort(function (a, b) { return b - a; }); // mais recente primeiro
+    continentesDisponiveis.sort(function (a, b) { return a.localeCompare(b); });
 
-    const [meses] = await db.execute(
-        `SELECT mes, SUM(quantidade_turistas) AS total
-         FROM turista_por_pais_mes WHERE planilha_idplanilha = ? GROUP BY mes`,
-        [planilha.idplanilha]
-    );
+    // Só aceita filtro que realmente exista nos dados (ignora valor inválido).
+    const filtrarAno = anosDisponiveis.includes(Number(filtros.ano));
+    const filtrarContinente = continentesDisponiveis.includes(filtros.continente);
 
+    const ano = filtrarAno ? Number(filtros.ano) : anosDisponiveis[0];
     const anoAnterior = ano - 1;
-    const atuais = [];
-    const anteriores = [];
+    const primeiroAno = anosDisponiveis[anosDisponiveis.length - 1];
+    const continente = filtrarContinente ? filtros.continente : null;
 
-    for (const pais of paises) {
-        if (Number(pais.ano) === ano) atuais.push(pais);
-        if (Number(pais.ano) === anoAnterior) anteriores.push(pais);
+    // Linhas do continente selecionado (ou todas), ainda sem filtrar o ano.
+    const linhasContinente = paises.filter(function (linha) {
+        return !continente || linha.continente === continente;
+    });
+
+    // Linhas dos gráficos: respeitam o ano escolhido (ou todos os anos).
+    const linhasAno = paises.filter(function (linha) {
+        return !filtrarAno || Number(linha.ano) === ano;
+    });
+    const linhasGrafico = linhasAno.filter(function (linha) {
+        return !continente || linha.continente === continente;
+    });
+
+    // UFs: a tabela é por DESTINO, então só dá para filtrar por ano (não por continente de origem).
+    let sqlUfs = `SELECT u.sigla AS nome, SUM(t.quantidade_turista) AS valor
+                  FROM turista_por_estado_mes t
+                  JOIN uf u ON u.iduf = t.uf_iduf
+                  WHERE t.planilha_idplanilha = ?`;
+    const paramsUfs = [planilha.idplanilha];
+
+    if (filtrarAno) {
+        sqlUfs += ' AND t.ano = ?';
+        paramsUfs.push(String(ano));
     }
 
-    const topPaises = agrupar(paises, 'nome').slice(0, 10);
+    sqlUfs += ' GROUP BY u.iduf, u.sigla ORDER BY valor DESC, u.sigla';
+    const [ufs] = await db.execute(sqlUfs, paramsUfs);
+
+    // Sazonalidade: filtra por ano e por continente (precisa do JOIN com país).
+    let sqlMeses = `SELECT t.mes, SUM(t.quantidade_turistas) AS total
+                    FROM turista_por_pais_mes t
+                    JOIN pais p ON p.idpais = t.pais_idpais
+                    WHERE t.planilha_idplanilha = ?`;
+    const paramsMeses = [planilha.idplanilha];
+
+    if (filtrarAno) {
+        sqlMeses += ' AND t.ano = ?';
+        paramsMeses.push(String(ano));
+    }
+
+    if (continente) {
+        sqlMeses += ' AND p.continente = ?';
+        paramsMeses.push(continente);
+    }
+
+    sqlMeses += ' GROUP BY t.mes';
+    const [meses] = await db.execute(sqlMeses, paramsMeses);
+
+    // KPIs e oportunidades comparam o ano escolhido com o anterior, dentro do continente escolhido.
+    const atuais = linhasContinente.filter(function (linha) {
+        return Number(linha.ano) === ano;
+    });
+    const anteriores = linhasContinente.filter(function (linha) {
+        return Number(linha.ano) === anoAnterior;
+    });
+
+    const topPaises = agrupar(linhasGrafico, 'nome').slice(0, 10);
     for (const pais of topPaises) {
-        const origem = paises.find(function (linha) {
+        const origem = linhasGrafico.find(function (linha) {
             return linha.nome === pais.nome;
         });
         pais.continente = origem.continente;
@@ -232,7 +279,7 @@ async function getGeral(idAgencia) {
     for (const uf of ufs) uf.valor = Number(uf.valor);
 
     let periodo = String(ano);
-    if (primeiroAno !== ano) periodo = primeiroAno + '–' + ano;
+    if (!filtrarAno && primeiroAno !== ano) periodo = primeiroAno + '–' + ano;
 
     return {
         planilha: planilha,
@@ -240,8 +287,15 @@ async function getGeral(idAgencia) {
         periodo: periodo,
         ano: ano,
         anoAnterior: anoAnterior,
+        filtros: {
+            ano: filtrarAno ? ano : null,
+            continente: continente,
+            anosDisponiveis: anosDisponiveis,
+            continentesDisponiveis: continentesDisponiveis
+        },
         kpis: montarKpis(atuais, anteriores),
-        continentes: agrupar(paises, 'continente'),
+        // O gráfico de continentes continua mostrando todos (só respeita o ano), para dar para comparar.
+        continentes: agrupar(linhasAno, 'continente'),
         paises: topPaises,
         ufs: ufs,
         sazonalidade: montarSazonalidade(meses),
@@ -250,4 +304,3 @@ async function getGeral(idAgencia) {
 }
 
 module.exports = { getGeral };
-

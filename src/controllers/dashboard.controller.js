@@ -26,7 +26,7 @@ async function getGeral(req, res) {
     }
 
     try {
-        const resultado = await dashboardGeralService.getGeral(idAgencia);
+       const resultado = await dashboardGeralService.getGeral(idAgencia, req.query);
         return res.status(200).json(resultado);
     } catch (erro) {
         console.error('Erro ao carregar visão geral:', erro);
